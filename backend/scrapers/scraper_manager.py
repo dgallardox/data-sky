@@ -93,7 +93,39 @@ class ScraperManager:
                     print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] {scraper.name} error: {str(e)}")
         
         self.last_run = datetime.now()
-        self.results = results
+        
+        # For run-all operations, create a combined result entry
+        if len(results) > 1:
+            # Add individual results
+            self.results.extend(results)
+            
+            # Create combined "Run All" result
+            total_items = sum(r.get('data_count', 0) for r in results if r['status'] == 'success')
+            successful_scrapers = [r['scraper'] for r in results if r['status'] == 'success']
+            failed_scrapers = [r['scraper'] for r in results if r['status'] != 'success']
+            
+            combined_status = 'success' if all(r['status'] == 'success' for r in results) else 'partial_success' if successful_scrapers else 'error'
+            
+            combined_result = {
+                "scraper": "Run All",
+                "scrapers": [r['scraper'] for r in results],  # All scrapers that ran
+                "successful_scrapers": successful_scrapers,
+                "failed_scrapers": failed_scrapers,
+                "status": combined_status,
+                "data_count": total_items,
+                "timestamp": datetime.now().isoformat(),
+                "run_type": "batch"
+            }
+            
+            self.results.append(combined_result)
+        else:
+            # Single scraper run
+            self.results.extend(results)
+        
+        # Keep only last 15 results (increased to accommodate batch + individual results)
+        if len(self.results) > 15:
+            self.results = self.results[-15:]
+        
         print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Scraping process completed. Total results: {len(results)}")
         return results
     

@@ -1,12 +1,10 @@
 import React, { useState } from 'react';
 import { Paper, Box, Typography, Grid, List, ListItem, ListItemText, Chip, IconButton, Tooltip } from '@mui/material';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import ErrorIcon from '@mui/icons-material/Error';
-import PendingIcon from '@mui/icons-material/Pending';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import DownloadOutlinedIcon from '@mui/icons-material/DownloadOutlined';
 import ScraperCard from './ScraperCard';
 import ScraperConfigModal from './ScraperConfigModal';
+import ScraperIconDisplay from './ScraperIconDisplay';
 
 const Dashboard = ({ status, onRefresh }) => {
   const [configModalOpen, setConfigModalOpen] = useState(false);
@@ -18,15 +16,26 @@ const Dashboard = ({ status, onRefresh }) => {
     return date.toLocaleString();
   };
   
-  const getStatusIcon = (status) => {
-    switch(status) {
-      case 'success':
-        return <CheckCircleIcon sx={{ color: '#4CAF50', fontSize: 20 }} />;
-      case 'error':
-        return <ErrorIcon sx={{ color: '#F44336', fontSize: 20 }} />;
-      default:
-        return <PendingIcon sx={{ color: '#FFA726', fontSize: 20 }} />;
+  const getScraperIcon = (result) => {
+    // For batch runs (Run All), show all scrapers that ran
+    if (result.run_type === 'batch' && result.scrapers) {
+      return (
+        <ScraperIconDisplay 
+          scrapers={result.scrapers}
+          status={result.status}
+          size="small"
+        />
+      );
     }
+    
+    // For individual scraper runs, show just that scraper
+    return (
+      <ScraperIconDisplay 
+        scrapers={[result.scraper]}
+        status={result.status}
+        size="small"
+      />
+    );
   };
   
   const handleViewResults = (filename) => {
@@ -110,7 +119,7 @@ const Dashboard = ({ status, onRefresh }) => {
               {status.last_results.map((result, index) => (
                 <ListItem key={index} sx={{ px: 0 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
-                    {getStatusIcon(result.status)}
+                    {getScraperIcon(result)}
                     <ListItemText 
                       primary={result.scraper}
                       secondary={`${result.data_count || 0} items • ${formatTime(result.timestamp)}`}
