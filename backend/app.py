@@ -2,6 +2,7 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from scrapers.scraper_manager import ScraperManager
 from scrapers.reddit_scraper import RedditScraper
+from scrapers.twitter_scraper import TwitterScraper
 from config.settings import settings
 import os
 import json
@@ -23,6 +24,11 @@ if os.path.exists(default_config_path):
     if 'reddit' in default_configs:
         reddit_scraper = RedditScraper(default_configs['reddit'])
         scraper_manager.register_scraper(reddit_scraper)
+    
+    # Register Twitter scraper with config
+    if 'twitter' in default_configs:
+        twitter_scraper = TwitterScraper(default_configs['twitter'])
+        scraper_manager.register_scraper(twitter_scraper)
 
 
 @app.route('/api/status', methods=['GET'])

@@ -4,5 +4,19 @@
     "subreddits": ["python", "programming", "technology", "datascience", "machinelearning"],
     "posts_per_subreddit": 25,
     "sort_by": "hot"
+  },
+  "twitter": {
+    "enabled": false,
+    "bearer_token": "",
+    "search_queries": [
+      "I wish there was an app",
+      "looking for a tool that",
+      "does anyone know how to",
+      "need software for",
+      "is there an app that"
+    ],
+    "time_window": "24h",
+    "max_results_per_query": 10,
+    "exclude_retweets": true
   }
 }

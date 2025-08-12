@@ -87,7 +87,9 @@ const ScraperCard = ({ scraper, onConfigClick, onRefresh }) => {
                 {scraper.display_name}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                {scraper.subreddits_count ? `${scraper.subreddits_count} subreddits` : 'Not configured'}
+                {scraper.name === 'reddit' && scraper.subreddits_count ? `${scraper.subreddits_count} subreddits` : 
+                 scraper.name === 'twitter' && scraper.search_queries_count ? `${scraper.search_queries_count} search queries` :
+                 'Not configured'}
               </Typography>
             </Box>
           </Box>
@@ -131,6 +133,28 @@ const ScraperCard = ({ scraper, onConfigClick, onRefresh }) => {
               </Typography>
               <Typography variant="body2">
                 {scraper.posts_per_subreddit} per subreddit
+              </Typography>
+            </Box>
+          )}
+          
+          {scraper.max_results_per_query && (
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Typography variant="body2" color="text.secondary">
+                Results limit
+              </Typography>
+              <Typography variant="body2">
+                {scraper.max_results_per_query} per query
+              </Typography>
+            </Box>
+          )}
+          
+          {scraper.time_window && (
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Typography variant="body2" color="text.secondary">
+                Time window
+              </Typography>
+              <Typography variant="body2">
+                Last {scraper.time_window}
               </Typography>
             </Box>
           )}
