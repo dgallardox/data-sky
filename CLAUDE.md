@@ -107,3 +107,9 @@ DATA_DIR=data
 - If port 5001 is in use, update both `backend/.env` and `frontend/src/services/api.js`
 - Dashboard shows "Scheduler Inactive" when Flask is running but scheduler thread is off
 - "Run Now" button is disabled when scheduler is inactive - this is intentional
+
+## Important Instructions
+
+- **ALWAYS make a git commit after completing each task or prompt**, unless the user explicitly says not to commit
+- Commits should have clear, descriptive messages explaining what changed
+- Include the Claude Code attribution in commit messages
