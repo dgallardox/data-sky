@@ -57,35 +57,33 @@ const Dashboard = ({ status, onRefresh }) => {
         </Paper>
       </Grid>
       
-      <Grid item xs={12}>
-        <Typography variant="h6" sx={{ color: '#4A90E2', mb: 2 }}>
-          Registered Scrapers
-        </Typography>
-        
-        <Grid container spacing={2}>
+      <Grid item xs={12} md={6}>
+        <Paper sx={{ p: 3, height: '100%' }}>
+          <Typography variant="h6" sx={{ color: '#4A90E2', mb: 2 }}>
+            Registered Scrapers
+          </Typography>
+          
           {status?.scrapers?.length > 0 ? (
-            status.scrapers.map((scraper) => (
-              <Grid item xs={12} md={6} lg={4} key={scraper.name}>
-                <ScraperCard 
-                  scraper={scraper}
-                  onConfigClick={(name) => {
-                    setSelectedScraper(name);
-                    setConfigModalOpen(true);
-                  }}
-                  onRefresh={onRefresh}
-                />
-              </Grid>
-            ))
-          ) : (
-            <Grid item xs={12}>
-              <Paper sx={{ p: 3 }}>
-                <Typography variant="body2" color="text.secondary">
-                  No scrapers registered yet
-                </Typography>
-              </Paper>
+            <Grid container spacing={2}>
+              {status.scrapers.map((scraper) => (
+                <Grid item xs={12} key={scraper.name}>
+                  <ScraperCard 
+                    scraper={scraper}
+                    onConfigClick={(name) => {
+                      setSelectedScraper(name);
+                      setConfigModalOpen(true);
+                    }}
+                    onRefresh={onRefresh}
+                  />
+                </Grid>
+              ))}
             </Grid>
+          ) : (
+            <Typography variant="body2" color="text.secondary">
+              No scrapers registered yet
+            </Typography>
           )}
-        </Grid>
+        </Paper>
       </Grid>
       
       <Grid item xs={12}>
