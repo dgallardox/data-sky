@@ -65,17 +65,6 @@ def get_settings():
     return jsonify(settings.to_dict())
 
 
-@app.route('/api/settings/port', methods=['POST'])
-def update_port():
-    data = request.get_json()
-    new_port = data.get('port')
-    
-    if not new_port or not isinstance(new_port, int) or new_port < 1024 or new_port > 65535:
-        return jsonify({"error": "Invalid port number"}), 400
-    
-    settings.update_port(new_port)
-    return jsonify({"status": "updated", "port": new_port})
-
 
 @app.route('/api/scrapers', methods=['GET'])
 def get_scrapers():

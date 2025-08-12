@@ -15,7 +15,6 @@ export const serverAPI = {
   stopServer: () => api.post('/server/stop'),
   runNow: () => api.post('/server/run-now'),
   getSettings: () => api.get('/settings'),
-  updatePort: (port) => api.post('/settings/port', { port }),
   getScrapers: () => api.get('/scrapers'),
   
   // Scraper-specific endpoints

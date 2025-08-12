@@ -13,7 +13,6 @@ function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [status, setStatus] = useState(null);
-  const [currentPort, setCurrentPort] = useState(5001);
   const [notification, setNotification] = useState({ open: false, message: '', severity: 'info' });
   
   const fetchStatus = async () => {
@@ -77,17 +76,6 @@ function App() {
     }
   };
   
-  const handlePortChange = async (newPort) => {
-    try {
-      await serverAPI.updatePort(newPort);
-      setCurrentPort(newPort);
-      setNotification({ open: true, message: `Port updated to ${newPort}. Please restart the server.`, severity: 'info' });
-    } catch (error) {
-      console.error('Failed to update port:', error);
-      setNotification({ open: true, message: 'Failed to update port', severity: 'error' });
-    }
-  };
-  
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
@@ -111,8 +99,6 @@ function App() {
         <SettingsModal
           open={settingsOpen}
           onClose={() => setSettingsOpen(false)}
-          currentPort={currentPort}
-          onPortChange={handlePortChange}
         />
         
         <Snackbar

@@ -1,35 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
   Button,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Box,
   Typography,
   IconButton,
+  Chip,
+  Divider,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 
-const SettingsModal = ({ open, onClose, currentPort, onPortChange }) => {
-  const [selectedPort, setSelectedPort] = useState(currentPort);
-  
-  const availablePorts = [3000, 4000, 5001, 5002, 8000, 8080, 8888, 9000];
-  
-  useEffect(() => {
-    setSelectedPort(currentPort);
-  }, [currentPort]);
-  
-  const handleSave = () => {
-    if (selectedPort !== currentPort) {
-      onPortChange(selectedPort);
-    }
-    onClose();
-  };
+const SettingsModal = ({ open, onClose }) => {
   
   return (
     <Dialog 
@@ -56,40 +41,51 @@ const SettingsModal = ({ open, onClose, currentPort, onPortChange }) => {
       </DialogTitle>
       
       <DialogContent sx={{ p: 3 }}>
-        <FormControl fullWidth sx={{ mt: 1 }}>
-          <InputLabel id="port-select-label">Server Port</InputLabel>
-          <Select
-            labelId="port-select-label"
-            value={selectedPort}
-            label="Server Port"
-            onChange={(e) => setSelectedPort(e.target.value)}
-          >
-            {availablePorts.map((port) => (
-              <MenuItem key={port} value={port}>
-                {port}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+        <Box sx={{ mb: 3 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+            <InfoOutlinedIcon sx={{ color: '#4A90E2' }} />
+            <Typography variant="subtitle1" sx={{ fontWeight: 500 }}>
+              Server Configuration
+            </Typography>
+          </Box>
+          
+          <Box sx={{ pl: 4 }}>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+              Backend Port: <Chip label="8937" size="small" variant="outlined" />
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+              Frontend Port: <Chip label="8936" size="small" variant="outlined" />
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              API Endpoint: <Chip label="http://localhost:8937/api" size="small" variant="outlined" />
+            </Typography>
+          </Box>
+        </Box>
         
-        <Typography variant="caption" color="text.secondary" sx={{ mt: 2, display: 'block' }}>
-          Note: Changing the port will require restarting the server
-        </Typography>
+        <Divider sx={{ my: 2 }} />
+        
+        <Box>
+          <Typography variant="subtitle1" sx={{ fontWeight: 500, mb: 2 }}>
+            About Data Sky
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Data Sky is an automated web scraping platform that collects data from various sources
+            to identify product opportunities and user needs. Configure scrapers to run automatically
+            or trigger them manually as needed.
+          </Typography>
+        </Box>
       </DialogContent>
       
       <DialogActions sx={{ p: 2, backgroundColor: '#F5F8FA' }}>
-        <Button onClick={onClose} color="inherit">
-          Cancel
-        </Button>
         <Button 
-          onClick={handleSave} 
+          onClick={onClose} 
           variant="contained"
           sx={{ 
             backgroundColor: '#4A90E2',
             '&:hover': { backgroundColor: '#2E7CD6' }
           }}
         >
-          Save Changes
+          Close
         </Button>
       </DialogActions>
     </Dialog>

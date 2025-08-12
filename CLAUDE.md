@@ -55,7 +55,6 @@ The backend uses a **Strategy Pattern** for scrapers:
 - `POST /api/server/stop` - Stops the scheduler
 - `POST /api/server/run-now` - Manually trigger all scrapers
 - `GET /api/settings` - Get current settings
-- `POST /api/settings/port` - Update server port
 - `GET /api/scrapers` - List registered scrapers
 
 ### Frontend Architecture

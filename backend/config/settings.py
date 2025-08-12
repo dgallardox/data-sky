@@ -13,9 +13,6 @@ class Settings:
         self.debug = os.getenv('DEBUG', 'False').lower() == 'true'
         self.data_dir = os.getenv('DATA_DIR', 'data')
         
-    def update_port(self, new_port: int):
-        self.port = new_port
-        
     def to_dict(self):
         return {
             'port': self.port,
