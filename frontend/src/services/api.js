@@ -17,6 +17,13 @@ export const serverAPI = {
   getSettings: () => api.get('/settings'),
   updatePort: (port) => api.post('/settings/port', { port }),
   getScrapers: () => api.get('/scrapers'),
+  
+  // Scraper-specific endpoints
+  getScraperConfig: (name) => api.get(`/scrapers/${name}/config`),
+  updateScraperConfig: (name, config) => api.post(`/scrapers/${name}/config`, config),
+  runScraper: (name) => api.post(`/scrapers/${name}/run`),
+  toggleScraper: (name, enabled) => api.post(`/scrapers/${name}/toggle`, { enabled }),
+  getScraperStats: (name) => api.get(`/scrapers/${name}/stats`),
 };
 
 export default api;

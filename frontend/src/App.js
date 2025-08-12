@@ -105,7 +105,7 @@ function App() {
             isLoading={isLoading}
           />
           
-          <Dashboard status={status} />
+          <Dashboard status={status} onRefresh={fetchStatus} />
         </Container>
         
         <SettingsModal

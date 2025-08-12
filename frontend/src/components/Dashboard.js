@@ -1,10 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Paper, Box, Typography, Grid, List, ListItem, ListItemText, Chip } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
 import PendingIcon from '@mui/icons-material/Pending';
+import ScraperCard from './ScraperCard';
+import ScraperConfigModal from './ScraperConfigModal';
 
-const Dashboard = ({ status }) => {
+const Dashboard = ({ status, onRefresh }) => {
+  const [configModalOpen, setConfigModalOpen] = useState(false);
+  const [selectedScraper, setSelectedScraper] = useState(null);
   const formatTime = (isoString) => {
     if (!isoString) return 'Never';
     const date = new Date(isoString);
@@ -23,6 +27,7 @@ const Dashboard = ({ status }) => {
   };
   
   return (
+    <>
     <Grid container spacing={3}>
       <Grid item xs={12} md={6}>
         <Paper sx={{ p: 3, height: '100%' }}>
@@ -52,27 +57,35 @@ const Dashboard = ({ status }) => {
         </Paper>
       </Grid>
       
-      <Grid item xs={12} md={6}>
-        <Paper sx={{ p: 3, height: '100%' }}>
-          <Typography variant="h6" sx={{ color: '#4A90E2', mb: 2 }}>
-            Registered Scrapers
-          </Typography>
-          
+      <Grid item xs={12}>
+        <Typography variant="h6" sx={{ color: '#4A90E2', mb: 2 }}>
+          Registered Scrapers
+        </Typography>
+        
+        <Grid container spacing={2}>
           {status?.scrapers?.length > 0 ? (
-            <List>
-              {status.scrapers.map((scraper, index) => (
-                <ListItem key={index} sx={{ px: 0 }}>
-                  <ListItemText primary={scraper} />
-                  <Chip label="Ready" size="small" color="primary" variant="outlined" />
-                </ListItem>
-              ))}
-            </List>
+            status.scrapers.map((scraper) => (
+              <Grid item xs={12} md={6} lg={4} key={scraper.name}>
+                <ScraperCard 
+                  scraper={scraper}
+                  onConfigClick={(name) => {
+                    setSelectedScraper(name);
+                    setConfigModalOpen(true);
+                  }}
+                  onRefresh={onRefresh}
+                />
+              </Grid>
+            ))
           ) : (
-            <Typography variant="body2" color="text.secondary">
-              No scrapers registered yet
-            </Typography>
+            <Grid item xs={12}>
+              <Paper sx={{ p: 3 }}>
+                <Typography variant="body2" color="text.secondary">
+                  No scrapers registered yet
+                </Typography>
+              </Paper>
+            </Grid>
           )}
-        </Paper>
+        </Grid>
       </Grid>
       
       <Grid item xs={12}>
@@ -109,6 +122,19 @@ const Dashboard = ({ status }) => {
         </Paper>
       </Grid>
     </Grid>
+    
+    <ScraperConfigModal
+      open={configModalOpen}
+      onClose={() => {
+        setConfigModalOpen(false);
+        setSelectedScraper(null);
+      }}
+      scraperName={selectedScraper}
+      onSave={() => {
+        onRefresh();
+      }}
+    />
+    </>
   );
 };
 

@@ -4,22 +4,44 @@ import schedule
 import time
 import threading
 from datetime import datetime
+import json
+import os
 
 
 class ScraperManager:
     
     def __init__(self):
-        self.scrapers: List[BaseScraper] = []
+        self.scrapers: Dict[str, BaseScraper] = {}
         self.is_running = False
         self.scheduler_thread = None
         self.last_run = None
         self.results = []
+        self.config_file = 'data/scraper_config.json'
+        self.load_runtime_config()
         
+    def load_runtime_config(self):
+        if os.path.exists(self.config_file):
+            try:
+                with open(self.config_file, 'r') as f:
+                    self.runtime_config = json.load(f)
+            except:
+                self.runtime_config = {}
+        else:
+            self.runtime_config = {}
+    
+    def save_runtime_config(self):
+        os.makedirs(os.path.dirname(self.config_file), exist_ok=True)
+        with open(self.config_file, 'w') as f:
+            json.dump(self.runtime_config, f, indent=2)
+    
     def register_scraper(self, scraper: BaseScraper):
-        self.scrapers.append(scraper)
+        self.scrapers[scraper.name] = scraper
+        if scraper.name in self.runtime_config:
+            scraper.update_config(self.runtime_config[scraper.name])
         
     def remove_scraper(self, scraper_name: str):
-        self.scrapers = [s for s in self.scrapers if s.name != scraper_name]
+        if scraper_name in self.scrapers:
+            del self.scrapers[scraper_name]
         
     def run_all_scrapers(self) -> List[Dict[str, Any]]:
         print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Beginning data scraping process...")
@@ -35,8 +57,10 @@ class ScraperManager:
                 "timestamp": datetime.now().isoformat()
             })
         else:
-            for scraper in self.scrapers:
-                print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Running scraper: {scraper.name}")
+            for name, scraper in self.scrapers.items():
+                if hasattr(scraper, 'config') and not scraper.config.get('enabled', True):
+                    continue
+                print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Running scraper: {name}")
                 try:
                     raw_data = scraper.scrape()
                     if scraper.validate_data(raw_data):
@@ -98,11 +122,90 @@ class ScraperManager:
         self.scheduler_thread = None
         print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Scheduler stopped")
     
+    def run_single_scraper(self, scraper_name: str) -> Dict[str, Any]:
+        if scraper_name not in self.scrapers:
+            raise ValueError(f"Scraper '{scraper_name}' not found")
+        
+        scraper = self.scrapers[scraper_name]
+        print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Running single scraper: {scraper_name}")
+        
+        try:
+            raw_data = scraper.scrape()
+            if scraper.validate_data(raw_data):
+                filtered_data = scraper.filter_data(raw_data)
+                formatted_data = scraper.convert_to_common_format(filtered_data)
+                filename = scraper.export_to_json(formatted_data)
+                
+                result = {
+                    "scraper": scraper_name,
+                    "status": "success",
+                    "data_count": len(filtered_data),
+                    "filename": filename,
+                    "timestamp": datetime.now().isoformat()
+                }
+            else:
+                result = {
+                    "scraper": scraper_name,
+                    "status": "validation_failed",
+                    "timestamp": datetime.now().isoformat()
+                }
+        except Exception as e:
+            result = {
+                "scraper": scraper_name,
+                "status": "error",
+                "error": str(e),
+                "timestamp": datetime.now().isoformat()
+            }
+        
+        # Update manager state so result shows in Recent Results
+        self.last_run = datetime.now()
+        self.results.append(result)
+        # Keep only last 10 results
+        if len(self.results) > 10:
+            self.results = self.results[-10:]
+        
+        return result
+    
+    def get_scraper_config(self, scraper_name: str) -> Dict[str, Any]:
+        if scraper_name in self.scrapers:
+            scraper = self.scrapers[scraper_name]
+            if hasattr(scraper, 'get_config'):
+                return scraper.get_config()
+        return {}
+    
+    def update_scraper_config(self, scraper_name: str, config: Dict[str, Any]):
+        if scraper_name in self.scrapers:
+            scraper = self.scrapers[scraper_name]
+            if hasattr(scraper, 'update_config'):
+                scraper.update_config(config)
+                self.runtime_config[scraper_name] = config
+                self.save_runtime_config()
+    
+    def get_scraper_stats(self, scraper_name: str) -> Dict[str, Any]:
+        if scraper_name in self.scrapers:
+            scraper = self.scrapers[scraper_name]
+            if hasattr(scraper, 'get_stats'):
+                return scraper.get_stats()
+        return {}
+    
+    def get_all_scrapers_info(self) -> List[Dict[str, Any]]:
+        scrapers_info = []
+        for name, scraper in self.scrapers.items():
+            if hasattr(scraper, 'get_stats'):
+                scrapers_info.append(scraper.get_stats())
+            else:
+                scrapers_info.append({
+                    'name': name,
+                    'display_name': name.title(),
+                    'enabled': True
+                })
+        return scrapers_info
+    
     def get_status(self) -> Dict[str, Any]:
         return {
             "is_running": self.is_running,
             "scrapers_count": len(self.scrapers),
-            "scrapers": [s.name for s in self.scrapers],
+            "scrapers": self.get_all_scrapers_info(),
             "last_run": self.last_run.isoformat() if self.last_run else None,
             "last_results": self.results
         }

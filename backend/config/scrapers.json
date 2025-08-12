@@ -1,0 +1,8 @@
+{
+  "reddit": {
+    "enabled": true,
+    "subreddits": ["python", "programming", "technology", "datascience", "machinelearning"],
+    "posts_per_subreddit": 25,
+    "sort_by": "hot"
+  }
+}
