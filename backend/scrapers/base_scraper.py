@@ -38,9 +38,14 @@ class BaseScraper(ABC):
     
     def export_to_json(self, data: Dict[str, Any], filename: str = None) -> str:
         if not filename:
-            filename = f"data/{self.name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+            # Just the filename, no path prefix
+            filename = f"{self.name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
         
-        with open(filename, 'w') as f:
+        # Always save to data directory
+        filepath = f"data/{filename}"
+        
+        with open(filepath, 'w') as f:
             json.dump(data, f, indent=2, default=str)
         
+        # Return just the filename, not the full path
         return filename
