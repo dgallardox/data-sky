@@ -26,18 +26,8 @@ function App() {
     }
   };
   
-  const fetchSettings = async () => {
-    try {
-      const response = await serverAPI.getSettings();
-      setCurrentPort(response.data.port);
-    } catch (error) {
-      console.error('Failed to fetch settings:', error);
-    }
-  };
-  
   useEffect(() => {
     fetchStatus();
-    fetchSettings();
     
     const interval = setInterval(fetchStatus, 5000);
     return () => clearInterval(interval);
