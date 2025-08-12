@@ -101,6 +101,8 @@ DEBUG=False
 DATA_DIR=data
 ```
 
+**Note**: If you have an existing `.env` file with `SERVER_PORT=5001`, update it to `8937` to match the new port configuration.
+
 ## Common Issues
 
 - If port 8937 or 8936 is in use, update `backend/config/settings.py`, `frontend/package.json`, and `frontend/src/services/api.js`
