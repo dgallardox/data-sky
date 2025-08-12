@@ -125,5 +125,33 @@ def get_scraper_stats(scraper_name):
     return jsonify({"error": "Scraper not found"}), 404
 
 
+@app.route('/api/results/<filename>', methods=['GET'])
+def view_results(filename):
+    """View scraped data as JSON"""
+    filepath = f"data/{filename}"
+    
+    if not os.path.exists(filepath):
+        return jsonify({"error": "File not found"}), 404
+    
+    try:
+        with open(filepath, 'r') as f:
+            data = json.load(f)
+        return jsonify(data)
+    except Exception as e:
+        return jsonify({"error": f"Failed to read file: {str(e)}"}), 500
+
+
+@app.route('/api/results/<filename>/download', methods=['GET'])
+def download_results(filename):
+    """Download scraped data file"""
+    from flask import send_file
+    filepath = f"data/{filename}"
+    
+    if not os.path.exists(filepath):
+        return jsonify({"error": "File not found"}), 404
+    
+    return send_file(filepath, as_attachment=True, download_name=filename)
+
+
 if __name__ == '__main__':
     app.run(host=settings.host, port=settings.port, debug=settings.debug)

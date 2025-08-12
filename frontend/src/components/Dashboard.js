@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
-import { Paper, Box, Typography, Grid, List, ListItem, ListItemText, Chip } from '@mui/material';
+import { Paper, Box, Typography, Grid, List, ListItem, ListItemText, Chip, IconButton, Tooltip } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
 import PendingIcon from '@mui/icons-material/Pending';
+import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
+import DownloadOutlinedIcon from '@mui/icons-material/DownloadOutlined';
 import ScraperCard from './ScraperCard';
 import ScraperConfigModal from './ScraperConfigModal';
 
 const Dashboard = ({ status, onRefresh }) => {
   const [configModalOpen, setConfigModalOpen] = useState(false);
   const [selectedScraper, setSelectedScraper] = useState(null);
+  
   const formatTime = (isoString) => {
     if (!isoString) return 'Never';
     const date = new Date(isoString);
@@ -24,6 +27,16 @@ const Dashboard = ({ status, onRefresh }) => {
       default:
         return <PendingIcon sx={{ color: '#FFA726', fontSize: 20 }} />;
     }
+  };
+  
+  const handleViewResults = (filename) => {
+    // Open JSON in new tab
+    window.open(`http://localhost:5001/api/results/${filename}`, '_blank');
+  };
+  
+  const handleDownloadResults = (filename) => {
+    // Trigger file download
+    window.open(`http://localhost:5001/api/results/${filename}/download`, '_blank');
   };
   
   return (
@@ -102,6 +115,38 @@ const Dashboard = ({ status, onRefresh }) => {
                       primary={result.scraper}
                       secondary={`${result.data_count || 0} items • ${formatTime(result.timestamp)}`}
                     />
+                    
+                    {/* View and Download buttons - only show for successful scrapes */}
+                    {result.status === 'success' && result.filename && (
+                      <Box sx={{ display: 'flex', gap: 0.5, mr: 1 }}>
+                        <Tooltip title="View results">
+                          <IconButton 
+                            size="small" 
+                            onClick={() => handleViewResults(result.filename)}
+                            sx={{ 
+                              color: '#757575',
+                              '&:hover': { color: '#4A90E2' }
+                            }}
+                          >
+                            <VisibilityOutlinedIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                        
+                        <Tooltip title="Download JSON">
+                          <IconButton 
+                            size="small"
+                            onClick={() => handleDownloadResults(result.filename)}
+                            sx={{ 
+                              color: '#757575',
+                              '&:hover': { color: '#4A90E2' }
+                            }}
+                          >
+                            <DownloadOutlinedIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      </Box>
+                    )}
+                    
                     <Chip 
                       label={result.status} 
                       size="small" 
