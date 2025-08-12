@@ -5,7 +5,7 @@ load_dotenv()
 
 
 class Settings:
-    DEFAULT_PORT = 5001
+    DEFAULT_PORT = 8937
     
     def __init__(self):
         self.port = int(os.getenv('SERVER_PORT', self.DEFAULT_PORT))

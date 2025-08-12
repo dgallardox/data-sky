@@ -31,12 +31,12 @@ const Dashboard = ({ status, onRefresh }) => {
   
   const handleViewResults = (filename) => {
     // Open JSON in new tab
-    window.open(`http://localhost:5001/api/results/${filename}`, '_blank');
+    window.open(`http://localhost:8937/api/results/${filename}`, '_blank');
   };
   
   const handleDownloadResults = (filename) => {
     // Trigger file download
-    window.open(`http://localhost:5001/api/results/${filename}/download`, '_blank');
+    window.open(`http://localhost:8937/api/results/${filename}/download`, '_blank');
   };
   
   return (

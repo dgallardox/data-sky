@@ -8,7 +8,7 @@ import os
 import json
 
 app = Flask(__name__)
-CORS(app, origins=["http://localhost:3000", "http://127.0.0.1:3000"])
+CORS(app, origins=["http://localhost:8936", "http://127.0.0.1:8936"])
 
 scraper_manager = ScraperManager()
 

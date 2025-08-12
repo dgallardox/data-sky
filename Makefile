@@ -1,12 +1,13 @@
 
 .PHONY: start backend frontend
 
-start: backend frontend
+dev: backend frontend
 
 backend:
-	cd ./backend && python app.py &
+	lsof -ti tcp:8937 | xargs kill -9 || true
+	cd ./backend && python3 app.py &
 
 frontend:
-	lsof -ti tcp:3000 | xargs kill -9 || true
+	lsof -ti tcp:8936 | xargs kill -9 || true
 	cd ./frontend && [ -d node_modules ] || npm ci
 	cd ./frontend && npm start &

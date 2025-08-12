@@ -14,10 +14,10 @@ Data Sky is a Python Flask backend with React frontend for automated web scrapin
 cd backend
 pip install -r requirements.txt
 
-# Run server (default port 5001)
+# Run server (default port 8937)
 python app.py
 
-# The server runs on port 5001 by default (port 5000 conflicts with macOS AirPlay)
+# The server runs on port 8937 by default (unusual port to avoid conflicts)
 ```
 
 ### Frontend (React Dashboard)
@@ -26,7 +26,7 @@ python app.py
 cd frontend
 npm install
 
-# Start development server
+# Start development server (port 8936)
 npm start
 
 # Build for production
@@ -61,7 +61,7 @@ The backend uses a **Strategy Pattern** for scrapers:
 ### Frontend Architecture
 
 React app with Material-UI components:
-- **API Communication**: `frontend/src/services/api.js` - Axios client configured for port 5001
+- **API Communication**: `frontend/src/services/api.js` - Axios client configured for port 8937
 - **State Management**: App.js manages global state with polling every 5 seconds
 - **Theme**: Sky blue color palette (#4A90E2) defined in `styles/theme.js`
 
@@ -69,7 +69,7 @@ React app with Material-UI components:
 
 1. **Server vs Scheduler**: The on/off switch controls the scheduler (automatic daily scraping), NOT the Flask server. The Flask server must stay running for the dashboard to work.
 
-2. **Port Configuration**: Default port is 5001 (not 5000) to avoid macOS AirPlay conflicts. Both frontend and backend are configured for this.
+2. **Port Configuration**: Default ports are 8937 (backend) and 8936 (frontend) to avoid conflicts with common services. Both are configured in their respective settings.
 
 3. **Data Storage**: Scraped data is saved as JSON files in `backend/data/` directory (created automatically, gitignored).
 
@@ -96,7 +96,7 @@ scraper_manager.register_scraper(MyScraper())
 
 Backend uses `.env` file (gitignored):
 ```
-SERVER_PORT=5001
+SERVER_PORT=8937
 SERVER_HOST=127.0.0.1
 DEBUG=False
 DATA_DIR=data
@@ -104,7 +104,7 @@ DATA_DIR=data
 
 ## Common Issues
 
-- If port 5001 is in use, update both `backend/.env` and `frontend/src/services/api.js`
+- If port 8937 or 8936 is in use, update `backend/config/settings.py`, `frontend/package.json`, and `frontend/src/services/api.js`
 - Dashboard shows "Scheduler Inactive" when Flask is running but scheduler thread is off
 - "Run Now" button is disabled when scheduler is inactive - this is intentional
 
