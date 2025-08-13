@@ -3,6 +3,7 @@ from flask_cors import CORS
 from scrapers.scraper_manager import ScraperManager
 from scrapers.reddit_scraper import RedditScraper
 from scrapers.twitter_scraper import TwitterScraper
+from analysis.ai_analyzer import AIAnalyzer
 from config.settings import settings
 import os
 import json
@@ -11,8 +12,10 @@ app = Flask(__name__)
 CORS(app, origins=["http://localhost:8936", "http://127.0.0.1:8936"])
 
 scraper_manager = ScraperManager()
+ai_analyzer = AIAnalyzer()
 
 os.makedirs('data', exist_ok=True)
+os.makedirs('analysis', exist_ok=True)
 
 # Load default config
 default_config_path = 'config/scrapers.json'
@@ -146,6 +149,46 @@ def download_results(filename):
         return jsonify({"error": "File not found"}), 404
     
     return send_file(filepath, as_attachment=True, download_name=filename)
+
+
+@app.route('/api/analysis/models', methods=['GET'])
+def get_available_models():
+    """Get list of available Ollama models for analysis"""
+    models = ai_analyzer.get_available_models()
+    return jsonify({"models": models})
+
+
+@app.route('/api/analyze/<filename>', methods=['POST'])
+def analyze_batch_file(filename):
+    """Analyze a batch file using AI"""
+    data = request.get_json() or {}
+    model_name = data.get('model', 'qwen2.5:14b')
+    
+    try:
+        result = ai_analyzer.analyze_batch_file(filename, model_name)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({
+            'success': False, 
+            'error': str(e),
+            'analysis': {"opportunities": [], "trends": [], "pain_points": []}
+        }), 500
+
+
+@app.route('/api/analysis/<analysis_filename>', methods=['GET'])
+def get_analysis_results(analysis_filename):
+    """Get saved analysis results"""
+    filepath = f"data/{analysis_filename}"
+    
+    if not os.path.exists(filepath):
+        return jsonify({"error": "Analysis file not found"}), 404
+    
+    try:
+        with open(filepath, 'r', encoding='utf-8') as f:
+            analysis_data = json.load(f)
+        return jsonify(analysis_data)
+    except Exception as e:
+        return jsonify({"error": f"Failed to read analysis file: {str(e)}"}), 500
 
 
 if __name__ == '__main__':

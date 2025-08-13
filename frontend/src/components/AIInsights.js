@@ -18,11 +18,12 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 
-const AIInsights = ({ status, onAnalyze }) => {
+const AIInsights = ({ status, onAnalyze, latestAnalysis }) => {
   const [insights, setInsights] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [expandedSection, setExpandedSection] = useState('opportunities');
+  const [analysisSource, setAnalysisSource] = useState(null);
 
   // Mock data for demonstration - will be replaced with real AI analysis
   const mockInsights = {
@@ -86,19 +87,17 @@ const AIInsights = ({ status, onAnalyze }) => {
     return '➡️';
   };
 
-  // Auto-analyze when new data is available
+  // Update insights when new analysis is available
   useEffect(() => {
-    if (status?.last_results?.length > 0 && !insights && !loading) {
-      // Only auto-analyze if we have recent results (within last 5 minutes)
-      const lastResult = status.last_results[status.last_results.length - 1];
-      if (lastResult?.timestamp) {
-        const timeDiff = Date.now() - new Date(lastResult.timestamp).getTime();
-        if (timeDiff < 5 * 60 * 1000) { // 5 minutes
-          handleAnalyze();
-        }
-      }
+    if (latestAnalysis?.analysis) {
+      setInsights(latestAnalysis.analysis);
+      setAnalysisSource({
+        filename: latestAnalysis.filename,
+        stats: latestAnalysis.stats
+      });
+      setError(null);
     }
-  }, [status?.last_results]);
+  }, [latestAnalysis]);
 
   if (!insights && !loading) {
     return (
@@ -114,7 +113,7 @@ const AIInsights = ({ status, onAnalyze }) => {
           No AI analysis available yet
         </Typography>
         <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-          Run scrapers to collect data for analysis
+          Click the brain icon (🧠) on any Recent Result to analyze
         </Typography>
       </Box>
     );
@@ -253,16 +252,16 @@ const AIInsights = ({ status, onAnalyze }) => {
         </Collapse>
       </Box>
 
-      {/* Refresh button */}
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 'auto' }}>
-        <IconButton 
-          size="small" 
-          onClick={handleAnalyze}
-          disabled={loading}
-          sx={{ color: '#4A90E2' }}
-        >
-          <RefreshIcon fontSize="small" />
-        </IconButton>
+      {/* Analysis source info */}
+      <Box sx={{ mt: 'auto', pt: 1, borderTop: '1px solid #eee' }}>
+        {analysisSource && (
+          <Typography variant="caption" color="text.secondary">
+            Analysis of: {analysisSource.filename}
+            {analysisSource.stats && (
+              <span> • {analysisSource.stats.total_items} items • {analysisSource.stats.meaningful_clusters} clusters</span>
+            )}
+          </Typography>
+        )}
       </Box>
     </Box>
   );

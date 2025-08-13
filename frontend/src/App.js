@@ -14,6 +14,7 @@ function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [status, setStatus] = useState(null);
   const [notification, setNotification] = useState({ open: false, message: '', severity: 'info' });
+  const [latestAnalysis, setLatestAnalysis] = useState(null);
   
   const fetchStatus = async () => {
     try {
@@ -66,6 +67,15 @@ function App() {
     }
   };
   
+  const handleAnalysisComplete = (analysisResult) => {
+    setLatestAnalysis(analysisResult);
+    setNotification({ 
+      open: true, 
+      message: 'AI analysis completed successfully', 
+      severity: 'success' 
+    });
+  };
+  
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
@@ -83,7 +93,12 @@ function App() {
             isLoading={isLoading}
           />
           
-          <Dashboard status={status} onRefresh={fetchStatus} />
+          <Dashboard 
+            status={status} 
+            onRefresh={fetchStatus} 
+            onAnalysisComplete={handleAnalysisComplete}
+            latestAnalysis={latestAnalysis}
+          />
         </Container>
         
         <SettingsModal

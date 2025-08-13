@@ -1,15 +1,18 @@
 import React, { useState } from 'react';
-import { Paper, Box, Typography, Grid, List, ListItem, ListItemText, Chip, IconButton, Tooltip } from '@mui/material';
+import { Paper, Box, Typography, Grid, List, ListItem, ListItemText, Chip, IconButton, Tooltip, CircularProgress } from '@mui/material';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import DownloadOutlinedIcon from '@mui/icons-material/DownloadOutlined';
+import PsychologyIcon from '@mui/icons-material/Psychology';
+import api from '../services/api';
 import ScraperCard from './ScraperCard';
 import ScraperConfigModal from './ScraperConfigModal';
 import ScraperIconDisplay from './ScraperIconDisplay';
 import AIInsights from './AIInsights';
 
-const Dashboard = ({ status, onRefresh }) => {
+const Dashboard = ({ status, onRefresh, onAnalysisComplete, latestAnalysis }) => {
   const [configModalOpen, setConfigModalOpen] = useState(false);
   const [selectedScraper, setSelectedScraper] = useState(null);
+  const [analyzingFiles, setAnalyzingFiles] = useState(new Set());
   
   const formatTime = (isoString) => {
     if (!isoString) return 'Never';
@@ -49,6 +52,40 @@ const Dashboard = ({ status, onRefresh }) => {
     window.open(`http://localhost:8937/api/results/${filename}/download`, '_blank');
   };
   
+  const handleAnalyzeResults = async (filename) => {
+    // Add to analyzing set
+    setAnalyzingFiles(prev => new Set([...prev, filename]));
+    
+    try {
+      // Get selected model from localStorage or use default
+      const selectedModel = localStorage.getItem('data_sky_ai_model') || 'qwen2.5:14b';
+      
+      const response = await api.post(`/analyze/${filename}`, {
+        model: selectedModel
+      });
+      
+      if (response.data.success) {
+        // Notify parent component that analysis is complete
+        if (onAnalysisComplete) {
+          onAnalysisComplete(response.data);
+        }
+      } else {
+        console.error('Analysis failed:', response.data.error);
+        alert(`Analysis failed: ${response.data.error}`);
+      }
+    } catch (error) {
+      console.error('Analysis request failed:', error);
+      alert('Analysis request failed. Please check if Ollama is running.');
+    } finally {
+      // Remove from analyzing set
+      setAnalyzingFiles(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(filename);
+        return newSet;
+      });
+    }
+  };
+  
   return (
     <>
     <Grid container spacing={3}>
@@ -58,7 +95,7 @@ const Dashboard = ({ status, onRefresh }) => {
             AI Insights
           </Typography>
           
-          <AIInsights status={status} onAnalyze={() => {}} />
+          <AIInsights status={status} onAnalyze={() => {}} latestAnalysis={latestAnalysis} />
         </Paper>
       </Grid>
       
@@ -108,9 +145,28 @@ const Dashboard = ({ status, onRefresh }) => {
                       secondary={`${result.data_count || 0} items • ${formatTime(result.timestamp)}`}
                     />
                     
-                    {/* View and Download buttons - only show for successful scrapes */}
+                    {/* Action buttons - only show for successful scrapes */}
                     {result.status === 'success' && result.filename && (
                       <Box sx={{ display: 'flex', gap: 0.5, mr: 1 }}>
+                        <Tooltip title="Analyze with AI">
+                          <IconButton 
+                            size="small" 
+                            onClick={() => handleAnalyzeResults(result.filename)}
+                            disabled={analyzingFiles.has(result.filename)}
+                            sx={{ 
+                              color: '#757575',
+                              '&:hover': { color: '#FFA726' },
+                              '&:disabled': { color: '#ccc' }
+                            }}
+                          >
+                            {analyzingFiles.has(result.filename) ? (
+                              <CircularProgress size={16} sx={{ color: '#FFA726' }} />
+                            ) : (
+                              <PsychologyIcon fontSize="small" />
+                            )}
+                          </IconButton>
+                        </Tooltip>
+                        
                         <Tooltip title="View results">
                           <IconButton 
                             size="small" 
