@@ -71,6 +71,8 @@ React app with Material-UI components:
 2. **Port Configuration**: Default ports are 8937 (backend) and 8936 (frontend) to avoid conflicts with common services. Both are configured in their respective settings.
 
 3. **Data Storage**: Scraped data is saved as JSON files in `backend/data/` directory (created automatically, gitignored).
+   - Individual scraper files: `reddit_YYYYMMDD_HHMMSS.json`, `twitter_YYYYMMDD_HHMMSS.json`
+   - Batch run files: `batch_YYYYMMDD_HHMMSS.json` (merged data with both by_source and chronological views)
 
 4. **Scheduler Behavior**: 
    - Runs daily at 12:00 PM when active

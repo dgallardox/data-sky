@@ -42,6 +42,103 @@ class ScraperManager:
     def remove_scraper(self, scraper_name: str):
         if scraper_name in self.scrapers:
             del self.scrapers[scraper_name]
+    
+    def normalize_timestamp(self, source: str, item: Dict[str, Any]) -> str:
+        """Normalize timestamps from different sources to ISO format"""
+        try:
+            if source == 'reddit':
+                # Reddit uses created_utc (unix timestamp)
+                if 'created_utc' in item:
+                    return datetime.fromtimestamp(item['created_utc']).isoformat()
+            elif source == 'twitter':
+                # Twitter already uses ISO format in created_at
+                if 'created_at' in item:
+                    return item['created_at']
+            
+            # Default to current time if no timestamp found
+            return datetime.now().isoformat()
+        except Exception:
+            return datetime.now().isoformat()
+    
+    def create_batch_file(self, individual_results: List[Dict[str, Any]]) -> str:
+        """Creates a merged JSON file from individual scraper results"""
+        batch_data = {
+            "metadata": {
+                "run_timestamp": datetime.now().isoformat(),
+                "run_type": "batch",
+                "total_items": 0,
+                "sources": [],
+                "summary": {}
+            },
+            "by_source": {},
+            "chronological": []
+        }
+        
+        successful_scrapers = []
+        failed_scrapers = []
+        
+        # Process each scraper's results
+        for result in individual_results:
+            scraper_name = result['scraper']
+            
+            if result['status'] != 'success' or not result.get('filename'):
+                failed_scrapers.append(scraper_name)
+                continue
+            
+            successful_scrapers.append(scraper_name)
+            batch_data["metadata"]["sources"].append(scraper_name)
+            
+            # Read the individual scraper's data file
+            try:
+                filepath = f"data/{result['filename']}"
+                with open(filepath, 'r') as f:
+                    scraper_data = json.load(f)
+                
+                # Add to by_source section (preserving original structure)
+                batch_data["by_source"][scraper_name] = scraper_data
+                
+                # Extract actual data array based on scraper type
+                data_items = []
+                if scraper_name == 'reddit' and 'posts' in scraper_data:
+                    data_items = scraper_data['posts']
+                elif scraper_name == 'twitter' and 'tweets' in scraper_data:
+                    data_items = scraper_data['tweets']
+                elif 'data' in scraper_data:
+                    data_items = scraper_data['data']
+                
+                # Add to chronological view with normalized timestamps
+                for item in data_items:
+                    batch_data["chronological"].append({
+                        "source": scraper_name,
+                        "timestamp": self.normalize_timestamp(scraper_name, item),
+                        "data": item
+                    })
+                
+                batch_data["metadata"]["total_items"] += len(data_items)
+                
+            except Exception as e:
+                print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Error reading {result['filename']}: {str(e)}")
+                failed_scrapers.append(scraper_name)
+        
+        # Sort chronological by timestamp
+        batch_data["chronological"].sort(key=lambda x: x['timestamp'])
+        
+        # Update metadata summary
+        batch_data["metadata"]["summary"] = {
+            "successful_scrapers": successful_scrapers,
+            "failed_scrapers": failed_scrapers,
+            "success_rate": f"{len(successful_scrapers)}/{len(individual_results)}"
+        }
+        
+        # Save the batch file
+        filename = f"batch_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+        filepath = f"data/{filename}"
+        
+        with open(filepath, 'w') as f:
+            json.dump(batch_data, f, indent=2, default=str)
+        
+        print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Created batch file: {filename}")
+        return filename
         
     def run_all_scrapers(self) -> List[Dict[str, Any]]:
         print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Beginning data scraping process...")
@@ -99,6 +196,14 @@ class ScraperManager:
             # Add individual results
             self.results.extend(results)
             
+            # Create batch file with merged data
+            batch_filename = None
+            if any(r['status'] == 'success' for r in results):
+                try:
+                    batch_filename = self.create_batch_file(results)
+                except Exception as e:
+                    print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Error creating batch file: {str(e)}")
+            
             # Create combined "Run All" result
             total_items = sum(r.get('data_count', 0) for r in results if r['status'] == 'success')
             successful_scrapers = [r['scraper'] for r in results if r['status'] == 'success']
@@ -113,6 +218,7 @@ class ScraperManager:
                 "failed_scrapers": failed_scrapers,
                 "status": combined_status,
                 "data_count": total_items,
+                "filename": batch_filename,  # Add the batch filename for view/download
                 "timestamp": datetime.now().isoformat(),
                 "run_type": "batch"
             }
