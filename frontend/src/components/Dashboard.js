@@ -116,7 +116,7 @@ const Dashboard = ({ status, onRefresh }) => {
           
           {status?.last_results?.length > 0 ? (
             <List>
-              {status.last_results.map((result, index) => (
+              {[...status.last_results].reverse().map((result, index) => (
                 <ListItem key={index} sx={{ px: 0 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
                     {getScraperIcon(result)}
