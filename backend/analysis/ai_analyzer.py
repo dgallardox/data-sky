@@ -33,45 +33,85 @@ class AIAnalyzer:
         """Extract all text from different sources into uniform format"""
         texts = []
         
-        # Handle by_source structure
-        by_source = batch_data.get('by_source', {})
-        
-        # Extract Reddit content
-        if 'reddit' in by_source:
-            reddit_data = by_source['reddit']
-            for post in reddit_data.get('posts', []):
-                # Combine title and selftext
-                full_text = post.get('title', '')
-                if post.get('selftext'):
-                    full_text += f" {post['selftext']}"
-                
-                if full_text.strip():
-                    texts.append({
-                        'text': full_text.strip(),
-                        'source': 'reddit',
-                        'metadata': {
-                            'subreddit': post.get('subreddit', ''),
-                            'score': post.get('score', 0),
-                            'num_comments': post.get('num_comments', 0),
-                            'url': post.get('url', '')
-                        }
-                    })
+        # Check if this is a batch file (has by_source) or individual scraper file
+        if 'by_source' in batch_data:
+            # Handle batch file structure
+            by_source = batch_data['by_source']
+            
+            # Extract Reddit content from batch
+            if 'reddit' in by_source:
+                reddit_data = by_source['reddit']
+                for post in reddit_data.get('data', []):
+                    # Combine title and selftext
+                    full_text = post.get('title', '')
+                    if post.get('selftext'):
+                        full_text += f" {post['selftext']}"
+                    
+                    if full_text.strip():
+                        texts.append({
+                            'text': full_text.strip(),
+                            'source': 'reddit',
+                            'metadata': {
+                                'subreddit': post.get('subreddit', ''),
+                                'score': post.get('score', 0),
+                                'num_comments': post.get('num_comments', 0),
+                                'url': post.get('url', '')
+                            }
+                        })
 
-        # Extract Twitter content
-        if 'twitter' in by_source:
-            twitter_data = by_source['twitter']
-            for tweet in twitter_data.get('tweets', []):
-                text = tweet.get('text', '').strip()
-                if text:
-                    texts.append({
-                        'text': text,
-                        'source': 'twitter',
-                        'metadata': {
-                            'likes': tweet.get('public_metrics', {}).get('like_count', 0),
-                            'retweets': tweet.get('public_metrics', {}).get('retweet_count', 0),
-                            'replies': tweet.get('public_metrics', {}).get('reply_count', 0)
-                        }
-                    })
+            # Extract Twitter content from batch
+            if 'twitter' in by_source:
+                twitter_data = by_source['twitter']
+                for tweet in twitter_data.get('data', []):
+                    text = tweet.get('text', '').strip()
+                    if text:
+                        texts.append({
+                            'text': text,
+                            'source': 'twitter',
+                            'metadata': {
+                                'likes': tweet.get('public_metrics', {}).get('like_count', 0),
+                                'retweets': tweet.get('public_metrics', {}).get('retweet_count', 0),
+                                'replies': tweet.get('public_metrics', {}).get('reply_count', 0)
+                            }
+                        })
+        
+        else:
+            # Handle individual scraper file structure
+            source = batch_data.get('source', 'unknown')
+            data = batch_data.get('data', [])
+            
+            if source == 'reddit':
+                for post in data:
+                    # Combine title and selftext
+                    full_text = post.get('title', '')
+                    if post.get('selftext'):
+                        full_text += f" {post['selftext']}"
+                    
+                    if full_text.strip():
+                        texts.append({
+                            'text': full_text.strip(),
+                            'source': 'reddit',
+                            'metadata': {
+                                'subreddit': post.get('subreddit', ''),
+                                'score': post.get('score', 0),
+                                'num_comments': post.get('num_comments', 0),
+                                'url': post.get('url', '')
+                            }
+                        })
+            
+            elif source == 'twitter':
+                for tweet in data:
+                    text = tweet.get('text', '').strip()
+                    if text:
+                        texts.append({
+                            'text': text,
+                            'source': 'twitter',
+                            'metadata': {
+                                'likes': tweet.get('public_metrics', {}).get('like_count', 0),
+                                'retweets': tweet.get('public_metrics', {}).get('retweet_count', 0),
+                                'replies': tweet.get('public_metrics', {}).get('reply_count', 0)
+                            }
+                        })
 
         return texts
 
