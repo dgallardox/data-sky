@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Paper, Box, Typography, Grid, List, ListItem, ListItemText, Chip, IconButton, Tooltip, CircularProgress, Tabs, Tab } from '@mui/material';
+import { Paper, Box, Typography, Grid, List, ListItem, ListItemText, Chip, IconButton, Tooltip, CircularProgress, Tabs, Tab, LinearProgress } from '@mui/material';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import DownloadOutlinedIcon from '@mui/icons-material/DownloadOutlined';
 import PsychologyIcon from '@mui/icons-material/Psychology';
@@ -286,8 +286,63 @@ const Dashboard = ({ status, onRefresh, onAnalysisComplete, latestAnalysis }) =>
     </Grid>
   );
 
-  // AI Analysis Panel with full-width AI Insights
+  // AI Analysis Panel with full-width AI Insights and loading states
   const AIAnalysisPanel = () => {
+    const isAnalyzing = analyzingFiles.size > 0;
+    
+    // Show loading state when analysis is in progress
+    if (isAnalyzing) {
+      const analyzingFilesList = Array.from(analyzingFiles);
+      return (
+        <Grid container spacing={3}>
+          <Grid item xs={12}>
+            <Paper sx={{ p: 4, minHeight: '600px' }}>
+              <Typography variant="h6" sx={{ color: '#4A90E2', mb: 3 }}>
+                AI Analysis in Progress
+              </Typography>
+              
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '400px' }}>
+                <CircularProgress size={80} sx={{ color: '#4A90E2', mb: 3 }} />
+                
+                <Typography variant="h6" sx={{ mb: 2, textAlign: 'center' }}>
+                  Analyzing Data with AI
+                </Typography>
+                
+                <Typography variant="body1" color="text.secondary" sx={{ mb: 3, textAlign: 'center' }}>
+                  Processing: {analyzingFilesList[0]}
+                </Typography>
+                
+                <Box sx={{ width: '60%', mb: 3 }}>
+                  <LinearProgress sx={{ 
+                    height: 8, 
+                    borderRadius: 4,
+                    '& .MuiLinearProgress-bar': {
+                      backgroundColor: '#4A90E2'
+                    }
+                  }} />
+                </Box>
+                
+                <Box sx={{ textAlign: 'center' }}>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                    • Extracting text content
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                    • Generating semantic embeddings
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                    • Clustering similar patterns
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    • Analyzing opportunities and trends
+                  </Typography>
+                </Box>
+              </Box>
+            </Paper>
+          </Grid>
+        </Grid>
+      );
+    }
+    
     // Show empty state if no analysis available
     if (!latestAnalysis?.analysis) {
       return (
