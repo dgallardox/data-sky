@@ -5,6 +5,7 @@ import DownloadOutlinedIcon from '@mui/icons-material/DownloadOutlined';
 import ScraperCard from './ScraperCard';
 import ScraperConfigModal from './ScraperConfigModal';
 import ScraperIconDisplay from './ScraperIconDisplay';
+import AIInsights from './AIInsights';
 
 const Dashboard = ({ status, onRefresh }) => {
   const [configModalOpen, setConfigModalOpen] = useState(false);
@@ -54,28 +55,10 @@ const Dashboard = ({ status, onRefresh }) => {
       <Grid item xs={12} md={6}>
         <Paper sx={{ p: 3, height: '100%' }}>
           <Typography variant="h6" sx={{ color: '#4A90E2', mb: 2 }}>
-            System Status
+            AI Insights
           </Typography>
           
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <Box>
-              <Typography variant="body2" color="text.secondary">
-                Active Scrapers
-              </Typography>
-              <Typography variant="h4" sx={{ color: '#2C3E50' }}>
-                {status?.scrapers_count || 0}
-              </Typography>
-            </Box>
-            
-            <Box>
-              <Typography variant="body2" color="text.secondary">
-                Last Run
-              </Typography>
-              <Typography variant="body1">
-                {formatTime(status?.last_run)}
-              </Typography>
-            </Box>
-          </Box>
+          <AIInsights status={status} onAnalyze={() => {}} />
         </Paper>
       </Grid>
       
