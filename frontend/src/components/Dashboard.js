@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Paper, Box, Typography, Grid, List, ListItem, ListItemText, Chip, IconButton, Tooltip, CircularProgress } from '@mui/material';
+import { Paper, Box, Typography, Grid, List, ListItem, ListItemText, Chip, IconButton, Tooltip, CircularProgress, Tabs, Tab } from '@mui/material';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import DownloadOutlinedIcon from '@mui/icons-material/DownloadOutlined';
 import PsychologyIcon from '@mui/icons-material/Psychology';
+import StorageIcon from '@mui/icons-material/Storage';
 import api from '../services/api';
 import ScraperCard from './ScraperCard';
 import ScraperConfigModal from './ScraperConfigModal';
@@ -14,6 +15,7 @@ const Dashboard = ({ status, onRefresh, onAnalysisComplete, latestAnalysis }) =>
   const [selectedScraper, setSelectedScraper] = useState(null);
   const [analyzingFiles, setAnalyzingFiles] = useState(new Set());
   const [analysisStatus, setAnalysisStatus] = useState(new Map()); // filename -> {exists, analyzed_at, etc}
+  const [currentTab, setCurrentTab] = useState(0);
   
   const formatTime = (isoString) => {
     if (!isoString) return 'Never';
@@ -103,6 +105,9 @@ const Dashboard = ({ status, onRefresh, onAnalysisComplete, latestAnalysis }) =>
     setAnalyzingFiles(prev => new Set([...prev, filename]));
     
     try {
+      // Switch to AI Analysis tab when starting analysis
+      setCurrentTab(1);
+      
       // Get selected model from localStorage or use default
       const selectedModel = localStorage.getItem('data_sky_ai_model') || 'qwen2.5:14b';
       
@@ -144,21 +149,15 @@ const Dashboard = ({ status, onRefresh, onAnalysisComplete, latestAnalysis }) =>
     }
   };
   
-  return (
-    <>
+  const handleTabChange = (event, newValue) => {
+    setCurrentTab(newValue);
+  };
+
+  // Data Collection Panel (current dashboard content)
+  const DataCollectionPanel = () => (
     <Grid container spacing={3}>
-      <Grid item xs={12} md={6}>
-        <Paper sx={{ p: 3, height: '100%' }}>
-          <Typography variant="h6" sx={{ color: '#4A90E2', mb: 2 }}>
-            AI Insights
-          </Typography>
-          
-          <AIInsights status={status} onAnalyze={() => {}} latestAnalysis={latestAnalysis} />
-        </Paper>
-      </Grid>
-      
-      <Grid item xs={12} md={6}>
-        <Paper sx={{ p: 3, height: '100%' }}>
+      <Grid item xs={12}>
+        <Paper sx={{ p: 3 }}>
           <Typography variant="h6" sx={{ color: '#4A90E2', mb: 2 }}>
             Registered Scrapers
           </Typography>
@@ -166,7 +165,7 @@ const Dashboard = ({ status, onRefresh, onAnalysisComplete, latestAnalysis }) =>
           {status?.scrapers?.length > 0 ? (
             <Grid container spacing={2}>
               {status.scrapers.map((scraper) => (
-                <Grid item xs={12} key={scraper.name}>
+                <Grid item xs={12} sm={6} md={4} lg={3} key={scraper.name}>
                   <ScraperCard 
                     scraper={scraper}
                     onConfigClick={(name) => {
@@ -285,6 +284,99 @@ const Dashboard = ({ status, onRefresh, onAnalysisComplete, latestAnalysis }) =>
         </Paper>
       </Grid>
     </Grid>
+  );
+
+  // AI Analysis Panel with full-width AI Insights
+  const AIAnalysisPanel = () => {
+    // Show empty state if no analysis available
+    if (!latestAnalysis?.analysis) {
+      return (
+        <Grid container spacing={3}>
+          <Grid item xs={12}>
+            <Paper sx={{ p: 4, textAlign: 'center', minHeight: '500px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+              <PsychologyIcon sx={{ fontSize: 64, color: '#4A90E2', mb: 2, mx: 'auto' }} />
+              <Typography variant="h5" sx={{ color: '#4A90E2', mb: 2 }}>
+                AI Analysis Platform
+              </Typography>
+              <Typography variant="body1" color="text.secondary" sx={{ mb: 1 }}>
+                Advanced analytics and business intelligence
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                Historical data analysis • Cross-source insights • Trend tracking
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                Click the brain icon (🧠) on any Recent Result to see AI analysis here
+              </Typography>
+            </Paper>
+          </Grid>
+        </Grid>
+      );
+    }
+
+    // Show full-width AI insights when analysis is available
+    return (
+      <Grid container spacing={3}>
+        <Grid item xs={12}>
+          <Paper sx={{ p: 3, minHeight: '600px' }}>
+            <Typography variant="h6" sx={{ color: '#4A90E2', mb: 2 }}>
+              AI Insights
+            </Typography>
+            <AIInsights 
+              status={status} 
+              onAnalyze={() => {}} 
+              latestAnalysis={latestAnalysis}
+            />
+          </Paper>
+        </Grid>
+      </Grid>
+    );
+  };
+
+  return (
+    <>
+    {/* Tab Navigation */}
+    <Paper sx={{ mb: 3 }}>
+      <Tabs 
+        value={currentTab} 
+        onChange={handleTabChange}
+        sx={{ 
+          borderBottom: '1px solid #e0e0e0',
+          '& .MuiTab-root': {
+            minHeight: 64,
+            textTransform: 'none',
+            fontSize: '16px',
+            fontWeight: 500
+          },
+          '& .MuiTabs-indicator': {
+            backgroundColor: '#4A90E2',
+            height: 3
+          }
+        }}
+      >
+        <Tab 
+          icon={<StorageIcon />} 
+          label="Data Collection" 
+          iconPosition="start"
+          sx={{ 
+            color: currentTab === 0 ? '#4A90E2' : '#757575',
+            '&.Mui-selected': { color: '#4A90E2' }
+          }}
+        />
+        <Tab 
+          icon={<PsychologyIcon />} 
+          label="AI Analysis" 
+          iconPosition="start"
+          sx={{ 
+            color: currentTab === 1 ? '#4A90E2' : '#757575',
+            '&.Mui-selected': { color: '#4A90E2' }
+          }}
+        />
+      </Tabs>
+    </Paper>
+
+    {/* Tab Content */}
+    {currentTab === 0 && <DataCollectionPanel />}
+    {currentTab === 1 && <AIAnalysisPanel />}
     
     <ScraperConfigModal
       open={configModalOpen}
