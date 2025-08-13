@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Paper, Box, Typography, Grid, List, ListItem, ListItemText, Chip, IconButton, Tooltip, CircularProgress, Tabs, Tab, LinearProgress } from '@mui/material';
+import { Paper, Box, Typography, Grid, List, ListItem, ListItemText, Chip, IconButton, Tooltip, CircularProgress, Tabs, Tab, LinearProgress, Pagination } from '@mui/material';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import DownloadOutlinedIcon from '@mui/icons-material/DownloadOutlined';
 import PsychologyIcon from '@mui/icons-material/Psychology';
@@ -16,6 +16,8 @@ const Dashboard = ({ status, onRefresh, onAnalysisComplete, latestAnalysis }) =>
   const [analyzingFiles, setAnalyzingFiles] = useState(new Set());
   const [analysisStatus, setAnalysisStatus] = useState(new Map()); // filename -> {exists, analyzed_at, etc}
   const [currentTab, setCurrentTab] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const resultsPerPage = 10;
   
   const formatTime = (isoString) => {
     if (!isoString) return 'Never';
@@ -55,15 +57,29 @@ const Dashboard = ({ status, onRefresh, onAnalysisComplete, latestAnalysis }) =>
     window.open(`http://localhost:8937/api/results/${filename}/download`, '_blank');
   };
   
-  // Check analysis status for all files when status updates
+  // Calculate pagination
+  const reversedResults = status?.last_results ? [...status.last_results].reverse() : [];
+  const totalPages = Math.ceil(reversedResults.length / resultsPerPage);
+  const startIndex = (currentPage - 1) * resultsPerPage;
+  const endIndex = startIndex + resultsPerPage;
+  const currentPageResults = reversedResults.slice(startIndex, endIndex);
+  
+  const handlePageChange = (event, value) => {
+    setCurrentPage(value);
+  };
+  
+  // Check analysis status for current page items only (performance optimization)
   React.useEffect(() => {
     const checkAnalysisStatus = async () => {
-      if (!status?.last_results) return;
+      if (!currentPageResults.length) return;
       
-      const newAnalysisStatus = new Map();
+      const newAnalysisStatus = new Map(analysisStatus); // Preserve existing cache
       
-      for (const result of status.last_results) {
+      for (const result of currentPageResults) {
         if (result.filename && (result.status === 'success' || result.status === 'partial_success')) {
+          // Skip if already cached
+          if (newAnalysisStatus.has(result.filename)) continue;
+          
           try {
             const response = await api.get(`/analysis/status/${result.filename}`);
             newAnalysisStatus.set(result.filename, response.data);
@@ -78,7 +94,7 @@ const Dashboard = ({ status, onRefresh, onAnalysisComplete, latestAnalysis }) =>
     };
     
     checkAnalysisStatus();
-  }, [status?.last_results]);
+  }, [currentPageResults.map(r => r.filename).join(',')]); // Re-run when page changes
   
   const handleAnalyzeResults = async (filename) => {
     const analysisInfo = analysisStatus.get(filename);
@@ -191,9 +207,10 @@ const Dashboard = ({ status, onRefresh, onAnalysisComplete, latestAnalysis }) =>
             Recent Results
           </Typography>
           
-          {status?.last_results?.length > 0 ? (
+          {reversedResults.length > 0 ? (
+            <>
             <List>
-              {[...status.last_results].reverse().map((result, index) => (
+              {currentPageResults.map((result, index) => (
                 <ListItem key={index} sx={{ px: 0 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
                     {getScraperIcon(result)}
@@ -276,6 +293,34 @@ const Dashboard = ({ status, onRefresh, onAnalysisComplete, latestAnalysis }) =>
                 </ListItem>
               ))}
             </List>
+            
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 3 }}>
+                <Typography variant="body2" color="text.secondary">
+                  Showing {startIndex + 1}-{Math.min(endIndex, reversedResults.length)} of {reversedResults.length} results
+                </Typography>
+                <Pagination
+                  count={totalPages}
+                  page={currentPage}
+                  onChange={handlePageChange}
+                  color="primary"
+                  sx={{
+                    '& .MuiPaginationItem-root': {
+                      color: '#757575',
+                    },
+                    '& .MuiPaginationItem-root.Mui-selected': {
+                      backgroundColor: '#4A90E2',
+                      color: 'white',
+                      '&:hover': {
+                        backgroundColor: '#2E7CD6',
+                      }
+                    }
+                  }}
+                />
+              </Box>
+            )}
+            </>
           ) : (
             <Typography variant="body2" color="text.secondary">
               No scraping results yet
