@@ -145,8 +145,8 @@ const Dashboard = ({ status, onRefresh, onAnalysisComplete, latestAnalysis }) =>
                       secondary={`${result.data_count || 0} items • ${formatTime(result.timestamp)}`}
                     />
                     
-                    {/* Action buttons - only show for successful scrapes */}
-                    {result.status === 'success' && result.filename && (
+                    {/* Action buttons - show for successful and partial success scrapes */}
+                    {(result.status === 'success' || result.status === 'partial_success') && result.filename && (
                       <Box sx={{ display: 'flex', gap: 0.5, mr: 1 }}>
                         <Tooltip title="Analyze with AI">
                           <IconButton 
@@ -196,9 +196,12 @@ const Dashboard = ({ status, onRefresh, onAnalysisComplete, latestAnalysis }) =>
                     )}
                     
                     <Chip 
-                      label={result.status} 
+                      label={result.status === 'partial_success' ? 'partial' : result.status} 
                       size="small" 
-                      color={result.status === 'success' ? 'success' : 'error'}
+                      color={
+                        result.status === 'success' ? 'success' : 
+                        result.status === 'partial_success' ? 'warning' : 'error'
+                      }
                       variant="outlined"
                     />
                   </Box>
