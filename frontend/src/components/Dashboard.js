@@ -83,6 +83,9 @@ const Dashboard = ({ status, onRefresh, onAnalysisComplete, latestAnalysis }) =>
   const handleAnalyzeResults = async (filename) => {
     const analysisInfo = analysisStatus.get(filename);
     
+    // Switch to AI Analysis tab for both cached and new analysis
+    setCurrentTab(1);
+    
     // If analysis already exists, load from cache
     if (analysisInfo?.exists) {
       try {
@@ -105,9 +108,6 @@ const Dashboard = ({ status, onRefresh, onAnalysisComplete, latestAnalysis }) =>
     setAnalyzingFiles(prev => new Set([...prev, filename]));
     
     try {
-      // Switch to AI Analysis tab when starting analysis
-      setCurrentTab(1);
-      
       // Get selected model from localStorage or use default
       const selectedModel = localStorage.getItem('data_sky_ai_model') || 'qwen2.5:14b';
       
