@@ -13,6 +13,7 @@ const Dashboard = ({ status, onRefresh, onAnalysisComplete, latestAnalysis }) =>
   const [configModalOpen, setConfigModalOpen] = useState(false);
   const [selectedScraper, setSelectedScraper] = useState(null);
   const [analyzingFiles, setAnalyzingFiles] = useState(new Set());
+  const [analysisStatus, setAnalysisStatus] = useState(new Map()); // filename -> {exists, analyzed_at, etc}
   
   const formatTime = (isoString) => {
     if (!isoString) return 'Never';
@@ -52,8 +53,53 @@ const Dashboard = ({ status, onRefresh, onAnalysisComplete, latestAnalysis }) =>
     window.open(`http://localhost:8937/api/results/${filename}/download`, '_blank');
   };
   
+  // Check analysis status for all files when status updates
+  React.useEffect(() => {
+    const checkAnalysisStatus = async () => {
+      if (!status?.last_results) return;
+      
+      const newAnalysisStatus = new Map();
+      
+      for (const result of status.last_results) {
+        if (result.filename && (result.status === 'success' || result.status === 'partial_success')) {
+          try {
+            const response = await api.get(`/analysis/status/${result.filename}`);
+            newAnalysisStatus.set(result.filename, response.data);
+          } catch (error) {
+            // If endpoint fails, assume no analysis exists
+            newAnalysisStatus.set(result.filename, { exists: false });
+          }
+        }
+      }
+      
+      setAnalysisStatus(newAnalysisStatus);
+    };
+    
+    checkAnalysisStatus();
+  }, [status?.last_results]);
+  
   const handleAnalyzeResults = async (filename) => {
-    // Add to analyzing set
+    const analysisInfo = analysisStatus.get(filename);
+    
+    // If analysis already exists, load from cache
+    if (analysisInfo?.exists) {
+      try {
+        const response = await api.get(`/analysis/${analysisInfo.analysis_filename}`);
+        if (onAnalysisComplete) {
+          onAnalysisComplete({
+            analysis: response.data.insights,
+            stats: response.data.stats,
+            filename: analysisInfo.analysis_filename
+          });
+        }
+        return;
+      } catch (error) {
+        console.error('Failed to load cached analysis:', error);
+        // Fall through to run new analysis
+      }
+    }
+    
+    // Run new analysis
     setAnalyzingFiles(prev => new Set([...prev, filename]));
     
     try {
@@ -65,6 +111,18 @@ const Dashboard = ({ status, onRefresh, onAnalysisComplete, latestAnalysis }) =>
       });
       
       if (response.data.success) {
+        // Update analysis status cache
+        setAnalysisStatus(prev => {
+          const newMap = new Map(prev);
+          newMap.set(filename, {
+            exists: true,
+            analysis_filename: response.data.filename,
+            analyzed_at: new Date().toISOString(),
+            stats: response.data.stats
+          });
+          return newMap;
+        });
+        
         // Notify parent component that analysis is complete
         if (onAnalysisComplete) {
           onAnalysisComplete(response.data);
@@ -148,21 +206,32 @@ const Dashboard = ({ status, onRefresh, onAnalysisComplete, latestAnalysis }) =>
                     {/* Action buttons - show for successful and partial success scrapes */}
                     {(result.status === 'success' || result.status === 'partial_success') && result.filename && (
                       <Box sx={{ display: 'flex', gap: 0.5, mr: 1 }}>
-                        <Tooltip title="Analyze with AI">
+                        <Tooltip title={
+                          analysisStatus.get(result.filename)?.exists 
+                            ? "View AI Analysis (cached)" 
+                            : "Analyze with AI"
+                        }>
                           <IconButton 
                             size="small" 
                             onClick={() => handleAnalyzeResults(result.filename)}
                             disabled={analyzingFiles.has(result.filename)}
                             sx={{ 
-                              color: '#757575',
-                              '&:hover': { color: '#FFA726' },
+                              color: analysisStatus.get(result.filename)?.exists ? '#4A90E2' : '#757575',
+                              '&:hover': { 
+                                color: analysisStatus.get(result.filename)?.exists ? '#2E7CD6' : '#FFA726' 
+                              },
                               '&:disabled': { color: '#ccc' }
                             }}
                           >
                             {analyzingFiles.has(result.filename) ? (
                               <CircularProgress size={16} sx={{ color: '#FFA726' }} />
                             ) : (
-                              <PsychologyIcon fontSize="small" />
+                              <PsychologyIcon 
+                                fontSize="small" 
+                                sx={{ 
+                                  fontWeight: analysisStatus.get(result.filename)?.exists ? 'bold' : 'normal'
+                                }}
+                              />
                             )}
                           </IconButton>
                         </Tooltip>

@@ -191,5 +191,33 @@ def get_analysis_results(analysis_filename):
         return jsonify({"error": f"Failed to read analysis file: {str(e)}"}), 500
 
 
+@app.route('/api/analysis/status/<filename>', methods=['GET'])
+def check_analysis_status(filename):
+    """Check if analysis exists for a given batch file"""
+    analysis_filename = filename.replace('.json', '_analysis.json')
+    analysis_filepath = f"data/{analysis_filename}"
+    
+    if os.path.exists(analysis_filepath):
+        try:
+            # Get basic info about the analysis without loading full data
+            with open(analysis_filepath, 'r', encoding='utf-8') as f:
+                analysis_data = json.load(f)
+            
+            return jsonify({
+                "exists": True,
+                "analysis_filename": analysis_filename,
+                "analyzed_at": analysis_data.get('analyzed_at'),
+                "model": analysis_data.get('model'),
+                "stats": analysis_data.get('stats', {})
+            })
+        except Exception as e:
+            return jsonify({
+                "exists": False,
+                "error": f"Failed to read analysis file: {str(e)}"
+            })
+    else:
+        return jsonify({"exists": False})
+
+
 if __name__ == '__main__':
     app.run(host=settings.host, port=settings.port, debug=settings.debug)
