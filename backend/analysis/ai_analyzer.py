@@ -78,9 +78,10 @@ class AIAnalyzer:
         else:
             # Handle individual scraper file structure
             source = batch_data.get('source', 'unknown')
-            data = batch_data.get('data', [])
             
             if source == 'reddit':
+                # Reddit individual files use 'data' array
+                data = batch_data.get('data', [])
                 for post in data:
                     # Combine title and selftext
                     full_text = post.get('title', '')
@@ -100,7 +101,9 @@ class AIAnalyzer:
                         })
             
             elif source == 'twitter':
-                for tweet in data:
+                # Twitter individual files use 'tweets' array
+                tweets = batch_data.get('tweets', [])
+                for tweet in tweets:
                     text = tweet.get('text', '').strip()
                     if text:
                         texts.append({
