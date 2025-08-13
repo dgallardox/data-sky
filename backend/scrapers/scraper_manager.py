@@ -17,7 +17,9 @@ class ScraperManager:
         self.last_run = None
         self.results = []
         self.config_file = 'data/scraper_config.json'
+        self.history_file = 'data/results_history.json'
         self.load_runtime_config()
+        self.load_results_history()
         
     def load_runtime_config(self):
         if os.path.exists(self.config_file):
@@ -28,6 +30,53 @@ class ScraperManager:
                 self.runtime_config = {}
         else:
             self.runtime_config = {}
+    
+    def load_results_history(self):
+        """Load previous results from history file on startup"""
+        if os.path.exists(self.history_file):
+            try:
+                with open(self.history_file, 'r') as f:
+                    history = json.load(f)
+                    self.results = history.get('results', [])
+                    
+                    # Validate that referenced files still exist
+                    valid_results = []
+                    for result in self.results:
+                        # Keep results without files (errors) or with existing files
+                        if not result.get('filename') or os.path.exists(f"data/{result['filename']}"):
+                            valid_results.append(result)
+                        else:
+                            print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Removing result with missing file: {result.get('filename')}")
+                    
+                    self.results = valid_results[-15:]  # Keep only last 15
+                    
+                    # Restore last_run timestamp if available
+                    if history.get('last_run'):
+                        self.last_run = datetime.fromisoformat(history['last_run'])
+                    
+                    print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Loaded {len(self.results)} results from history")
+            except Exception as e:
+                print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Error loading results history: {str(e)}")
+                self.results = []
+        else:
+            print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] No results history found, starting fresh")
+    
+    def save_results_history(self):
+        """Save current results to history file for persistence"""
+        try:
+            os.makedirs('data', exist_ok=True)
+            history = {
+                'results': self.results,
+                'last_run': self.last_run.isoformat() if self.last_run else None,
+                'saved_at': datetime.now().isoformat()
+            }
+            
+            with open(self.history_file, 'w') as f:
+                json.dump(history, f, indent=2, default=str)
+            
+            print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Saved {len(self.results)} results to history")
+        except Exception as e:
+            print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Error saving results history: {str(e)}")
     
     def save_runtime_config(self):
         os.makedirs(os.path.dirname(self.config_file), exist_ok=True)
@@ -232,6 +281,9 @@ class ScraperManager:
         if len(self.results) > 15:
             self.results = self.results[-15:]
         
+        # Save results history for persistence across restarts
+        self.save_results_history()
+        
         print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Scraping process completed. Total results: {len(results)}")
         return results
     
@@ -298,9 +350,12 @@ class ScraperManager:
         # Update manager state so result shows in Recent Results
         self.last_run = datetime.now()
         self.results.append(result)
-        # Keep only last 10 results
-        if len(self.results) > 10:
-            self.results = self.results[-10:]
+        # Keep only last 15 results (consistent with run_all)
+        if len(self.results) > 15:
+            self.results = self.results[-15:]
+        
+        # Save results history for persistence
+        self.save_results_history()
         
         return result
     
