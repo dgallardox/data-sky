@@ -19,7 +19,11 @@ class AIAnalyzer:
         """Lazy load the embedding model to avoid startup delays"""
         if self.embedding_model is None:
             try:
-                self.embedding_model = SentenceTransformer(self.embedding_model_name)
+                self.embedding_model = SentenceTransformer(
+                    self.embedding_model_name, 
+                    trust_remote_code=True
+                )
+                print(f"✅ Loaded embedding model: {self.embedding_model_name}")
             except Exception as e:
                 print(f"Warning: Could not load embedding model {self.embedding_model_name}: {e}")
                 self.embedding_model = None
